@@ -22,15 +22,18 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 import java.util.List;
 
+import cn.pedant.SweetAlert.SweetAlertDialog;
+
 /**
  * Created by moree on 1/13/2017.
  */
 
 public class MyCountryAdapter extends BaseAdapter {
-    Context context;
+    private Context context;
     //my ArrayLists for my BaseApter
-    List<String> getCountrynames;
-    List<String> getCountrypics;
+    private List<String> getCountrynames;
+    private List<String> getCountrypics;
+    private SweetAlertDialog checkLogin;
 /// my Constructor for my Base adapter has context and to arrays
     public MyCountryAdapter(Context context,List getpics,List getCountrynames) {
         this.context = context;
@@ -66,7 +69,7 @@ public class MyCountryAdapter extends BaseAdapter {
         ImageView myImg = (ImageView) gridInflateItem.findViewById(R.id.myItem_Img);
         gridInflateItem.setLayoutParams(new GridView.LayoutParams(350,450));
         LinearLayout myGrid=(LinearLayout)gridInflateItem.findViewById(R.id.MyGridItem);
-       // gridInflateItem.setPadding(0,0,0,0);
+        // gridInflateItem.setPadding(0,0,0,0);
         TextView myText=(TextView)gridInflateItem.findViewById(R.id.myItem_text);
        Picasso.with(context)
                 .load(getCountrypics.get(i))
@@ -77,34 +80,6 @@ public class MyCountryAdapter extends BaseAdapter {
 
     }
 
-
-    private void GetCountryData_Pics() {
-        getCountrynames=new ArrayList<>();
-        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
-        QueryOptions queryOptions = new QueryOptions();
-        queryOptions.setPageSize(100);
-        queryOptions.setOffset(0);
-        dataQuery.setQueryOptions(queryOptions);
-        Backendless.Persistence.of(MyCountryData.class).find(dataQuery, new AsyncCallback<BackendlessCollection<MyCountryData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<MyCountryData> response) {
-                for (MyCountryData item : response.getData()) {
-                    getCountrypics.add(item.CountryPic);
-                    getCountrynames.add(item.CountryName);
-
-
-                }
-
-            }
-
-            @Override
-            public void handleFault(BackendlessFault fault) {
-
-            }
-        });
-
-
-    }
 
 
 }

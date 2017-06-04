@@ -16,6 +16,8 @@ import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
 import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.Movies.MoviesChannels;
 import com.example.moree.mytvapp1.Music.MusicChannels;
@@ -31,10 +33,12 @@ import java.util.ArrayList;
  */
 
 public class Categories extends Fragment {
-    Context context;
-    ArrayList<String> getCatagoryPics=new ArrayList<>();
-    ArrayList<String> getCatagoryNames=new ArrayList<>();
-    public GridView list;
+    private Context context;
+    private ArrayList<String> getCatagoryPics = new ArrayList<>();
+    private ArrayList<String> getCatagoryNames = new ArrayList<>();
+    private GridView list;
+    private Fragmentcontainer fragmentcontainer;
+
     public Categories() {
     }
 
@@ -42,35 +46,32 @@ public class Categories extends Fragment {
     @Override
     public View onCreateView(final LayoutInflater inflater, @Nullable final ViewGroup container, Bundle savedInstanceState) {
         context = container.getContext();
-        final Fragmentcontainer first=(Fragmentcontainer)getActivity();
-       // savedata();
-        getCatagoryNames.clear();
-        getCatagoryPics.clear();
-         getPic();
+        fragmentcontainer = (Fragmentcontainer) getActivity();
+        // savedata();
+        getPic();
         View movInf = inflater.inflate(R.layout.activity_categories, container, false);
-       list = (GridView) movInf.findViewById(R.id.TvShow);
+        list = (GridView) movInf.findViewById(R.id.TvShow);
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-switch (i)
-{
-    case 0:
-        Toast.makeText(context, "sports", Toast.LENGTH_SHORT).show();
-        first.nextFragment(R.id.fcontainer,new SportChannels());
-       break;
-    case 1:
-        Toast.makeText(context, "News", Toast.LENGTH_SHORT).show();
-        first.nextFragment(R.id.fcontainer,new NewsChannels());
-        break;
-    case 2:
-        Toast.makeText(context, "Music", Toast.LENGTH_SHORT).show();
-        first.nextFragment(R.id.fcontainer,new MusicChannels());
-        break;
-    case 3:
-        Toast.makeText(context, "tv show", Toast.LENGTH_SHORT).show();
-        first.nextFragment(R.id.fcontainer,new MoviesChannels());
-        break;
-}
+                switch (i) {
+                    case 0:
+                        Toast.makeText(context, "sports", Toast.LENGTH_SHORT).show();
+                        fragmentcontainer.nextFragment(R.id.fcontainer, new SportChannels());
+                        break;
+                    case 1:
+                        Toast.makeText(context, "News", Toast.LENGTH_SHORT).show();
+                        fragmentcontainer.nextFragment(R.id.fcontainer, new NewsChannels());
+                        break;
+                    case 2:
+                        Toast.makeText(context, "Music", Toast.LENGTH_SHORT).show();
+                        fragmentcontainer.nextFragment(R.id.fcontainer, new MusicChannels());
+                        break;
+                    case 3:
+                        Toast.makeText(context, "tv show", Toast.LENGTH_SHORT).show();
+                        fragmentcontainer.nextFragment(R.id.fcontainer, new MoviesChannels());
+                        break;
+                }
 
             }
 
@@ -81,11 +82,16 @@ switch (i)
 
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        getCatagoryNames.clear();
+        getCatagoryPics.clear();
+    }
 
-    private void savedata()
-    {
-       CatagoeryData cata=new CatagoeryData();
-        cata.cataName="fsfd";
+    private void savedata() {
+        CatagoeryData cata = new CatagoeryData();
+        cata.cataName = "fsfd";
         Backendless.Persistence.of(CatagoeryData.class).save(cata, new AsyncCallback<CatagoeryData>() {
             @Override
             public void handleResponse(CatagoeryData response) {
@@ -98,36 +104,36 @@ switch (i)
             }
         });
     }
-    private void getPic()
-    {
-        final ProgressDialog progressDialog1 = new ProgressDialog(context);
-        progressDialog1.setTitle("Getting Data");
-        progressDialog1.setMessage("Please Wait");
-        progressDialog1.show();
+
+    private void getPic() {
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+        fragmentcontainer.porgressdialog(context, "Getting Data");
         try {
 
 
-            Backendless.Persistence.of(CatagoeryData.class).find(new AsyncCallback<BackendlessCollection<CatagoeryData>>() {
+            Backendless.Persistence.of(CatagoeryData.class).find(dataQuery,new AsyncCallback<BackendlessCollection<CatagoeryData>>() {
                 @Override
                 public void handleResponse(BackendlessCollection<CatagoeryData> response) {
                     for (CatagoeryData data : response.getData()) {
                         getCatagoryPics.add(data.cataImg);
                         getCatagoryNames.add(data.cataName);
-                    progressDialog1.dismiss();
                     }
                     list.setAdapter(new MyCountryAdapter(context, getCatagoryPics, getCatagoryNames));
-                    return;
+                    fragmentcontainer.dismisprogress();
                 }
 
                 @Override
                 public void handleFault(BackendlessFault fault) {
-
+                    Toast.makeText(context, "NetWork Error", Toast.LENGTH_SHORT).show();
                 }
             });
-        }catch (Exception e)
-        {
-            Toast.makeText(context, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            Toast.makeText(context, "Error", Toast.LENGTH_SHORT).show();
         }
-        }
+    }
 }
 

@@ -10,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
 import android.widget.Toast;
 
 import com.devbrackets.android.exomedia.listener.OnPreparedListener;
@@ -19,9 +20,9 @@ import com.devbrackets.android.exomedia.ui.widget.VideoControlsLeanback;
 
 
 public class Video extends AppCompatActivity {
-    EMVideoView video;
-    Context context;
-    int vlcRequestCode = 42;
+    private EMVideoView video;
+    private Context context;
+    private int vlcRequestCode = 42;
     // SimpleExoPlayer player;
     // ExoPlayerFactory exo;
     @Override
@@ -36,7 +37,8 @@ public class Video extends AppCompatActivity {
     }
 
 public void uri1()
-{Bundle b = getIntent().getExtras();
+{
+    Bundle b = getIntent().getExtras();
     Intent intent=new Intent(Intent.ACTION_VIEW);
     intent.setDataAndType(Uri.parse(b.getString("link")),"video/*");
     try {
@@ -48,6 +50,7 @@ public void uri1()
         Toast.makeText(context, "Error: "+e.getMessage(), Toast.LENGTH_SHORT).show();
     }
         onBackPressed();
+
 }
     public void uri() {
 
@@ -67,10 +70,19 @@ public void uri1()
     @Override
     public void onBackPressed() {
         finish();
+        onStop();
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+    if (video.isPlaying())
+    {
+        video.pause();
+    }
+    }
 
-    public void uri2() {
+    private void uri2() {
         try {
             Bundle b = getIntent().getExtras();
             video.getVideoControls().setVerticalFadingEdgeEnabled(true);
@@ -90,7 +102,6 @@ public void uri1()
             });
 
         } catch (Exception e) {
-            // TODO: handle exception
             e.printStackTrace();
         }
     }

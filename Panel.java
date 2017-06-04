@@ -40,10 +40,7 @@ import java.util.List;
 public class Panel extends Fragment {
     private Context context;
     private LinearLayout container1;
-    private WifiManager wifiManager;
-    private ConnectivityManager cm;
-    private NetworkInfo activeNetwork;
-    private ProgressDialog resetNetwork;
+    private splashScreen splashScreen;
     private Fragmentcontainer fragmentcontainer;
     private utlShared ut;
     private MainActivity activity;
@@ -57,11 +54,6 @@ public class Panel extends Fragment {
         context = container.getContext();
     //we call fragmentcontainer to use its data
         fragmentcontainer = (Fragmentcontainer) getActivity();
-        //NetWorkName();
-        wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
-        cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-
         final View panel = inflater.inflate(R.layout.panel, container, false);
 
         ImageView btnCategories = (ImageView) panel.findViewById(R.id.btnCategories);
@@ -97,13 +89,13 @@ public class Panel extends Fragment {
             @Override
             public void onClick(View v) {
                 //we call utlshared that hold sharedpreferences
+                activity = new MainActivity();
                 ut = new utlShared(context);
                 //we call our main activity to set the logged use is false
-                activity = new MainActivity();
                 activity.setLogged(ut.putBol(false));
  //when  user log out the own id that was saved will be deleted
-                String id=ut.getId("");
-                Toast.makeText(context, "Key Deleted: "+id, Toast.LENGTH_SHORT).show();
+               String id=ut.getId("");
+                //Toast.makeText(context, "Key Deleted: "+id, Toast.LENGTH_SHORT).show();
          //this method that delete keys
                 ut.DeleteKey(id);
 //after it done all this it will changed screen to login screen
@@ -116,55 +108,6 @@ public class Panel extends Fragment {
     }
 
 
-    //one
-    public void NetWorkName() {
-        cm = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-        activeNetwork = cm.getActiveNetworkInfo();
-        if (activeNetwork != null) {
-            // connected to the internet
-            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
-
-                Toast.makeText(context, activeNetwork.getExtraInfo(), Toast.LENGTH_SHORT).show();
-                return;
-            }
-        } else {
-            Toast.makeText(context, "Error Getting Data", Toast.LENGTH_SHORT).show();
-            IntentWifi();
-            return;
-
-        }
-        if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
-            Toast.makeText(context, "connect2 to" + activeNetwork.getTypeName(), Toast.LENGTH_SHORT).show();
-            return;
-        }
-    }
-
-
-    //turn on the wifi
-    public void IntentWifi() {
-
-        resetNetwork = new ProgressDialog(context);
-        ;
-        final AlertDialog.Builder reload = new AlertDialog.Builder(context);
-        reload.setTitle("Connection Error");
-        reload.setMessage("Turn on the Wifi");
-        reload.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        reload.setPositiveButton("Turn ON", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
-                //startActivity(new Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS));
-
-
-            }
-        });
-        reload.show();
-    }
 
 
 

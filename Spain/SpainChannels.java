@@ -10,11 +10,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -27,34 +31,39 @@ import java.util.ArrayList;
  */
 
 public class SpainChannels extends Fragment {
-    Context context;
-    ArrayList<String> Spainlink = new ArrayList<>();
-    ArrayList<String> SpainPics = new ArrayList<>();
-    ArrayList<String> SpainNames = new ArrayList<>();
-    GridView SPchannels;
-    MyCountries myCountries;
+    private Context context;
+    private ArrayList<String> Spainlink = new ArrayList<>();
+    private ArrayList<String> SpainPics = new ArrayList<>();
+    private ArrayList<String> SpainNames = new ArrayList<>();
+    private GridView SPchannels;
+    private MyCountries myCountries;
+    private Fragmentcontainer fragmentcontainer;
 
     public SpainChannels() {
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        SpainNames.clear();
+        Spainlink.clear();
+        SpainPics.clear();
+    }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         //Save_SpainLinks();
         context = container.getContext();
-        SpainPics.clear();
+        fragmentcontainer=(Fragmentcontainer)getActivity();
         Get_SpainData();
         myCountries = new MyCountries();
-        myCountries.Find(context);
         View SPChannelInf = inflater.inflate(R.layout.my_grid_view, container, false);
         SPchannels = (GridView) SPChannelInf.findViewById(R.id.MyGridView);
         SPchannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                myCountries.MyAlertDialog1(context,Spainlink.get(i),SpainPics.get(i));
-
-//sport
+                myCountries.MyAlertDialog1(context, Spainlink.get(i), SpainPics.get(i), SpainNames.get(i));
                 /*
                 link.add("http://1.442244.info/sp_la_1/index.m3u8");
                 link.add("http://1.442244.info/sp_la_2/index.m3u8");
@@ -91,21 +100,35 @@ public class SpainChannels extends Fragment {
     }
 
     private void Get_SpainData() {
-        Backendless.Persistence.of(SpainData.class).find(new AsyncCallback<BackendlessCollection<SpainData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<SpainData> response) {
-                for (SpainData item : response.getData()) {
-                    Spainlink.add(item.SpainChannel_Link);
-                    SpainPics.add(item.SpainChannel_Pic);
-                    SpainNames.add(item.SpainChannel_Name);
+        fragmentcontainer.porgressdialog(context,"Getting Data");
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+        try {
+            Backendless.Persistence.of(SpainData.class).find(dataQuery, new AsyncCallback<BackendlessCollection<SpainData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<SpainData> response) {
+                    for (SpainData item : response.getData()) {
+                        Spainlink.add(item.SpainChannel_Link);
+                        SpainPics.add(item.SpainChannel_Pic);
+                        SpainNames.add(item.SpainChannel_Name);
+                    }
+                    SPchannels.setAdapter(new MyCountryAdapter(context, SpainPics, SpainNames));
+                    fragmentcontainer.dismisprogress();
+                    return;
                 }
-                SPchannels.setAdapter(new MyCountryAdapter(context, SpainPics, SpainNames));
-            }
 
-            @Override
-            public void handleFault(BackendlessFault fault) {
+                @Override
+                public void handleFault(BackendlessFault fault) {
+                    Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+                }
+            });
 
-            }
-        });
+        }catch (Exception e)
+        {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
     }
 }

@@ -2,9 +2,6 @@ package com.example.moree.mytvapp1;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.widget.Toast;
-
-import com.google.android.exoplayer.C;
 
 /**
  * Created by morees on 10/27/2016.
@@ -14,7 +11,7 @@ public class utlShared {
     private Context context;
     private SharedPreferences MyFavoriteData ;
 private SharedPreferences.Editor editor;
-    private utlShared() {}
+    public utlShared() {}
 
 
     public utlShared(Context context) {

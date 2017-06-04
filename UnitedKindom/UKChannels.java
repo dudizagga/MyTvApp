@@ -18,6 +18,7 @@ import com.backendless.exceptions.BackendlessException;
 import com.backendless.exceptions.BackendlessFault;
 import com.backendless.persistence.BackendlessDataQuery;
 import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -25,13 +26,13 @@ import com.example.moree.mytvapp1.R;
 import java.util.ArrayList;
 
 public class UKChannels extends Fragment {
-    Context context;
-    GridView UKchannels;
-    ArrayList<String> Uklink = new ArrayList<>();
-    ArrayList<String> UKpic1 = new ArrayList<>();
-    ArrayList<String> UKNames = new ArrayList<>();
-    MyCountries myCountries;
-
+    private Context context;
+   private GridView UKchannels;
+   private ArrayList<String> Uklink = new ArrayList<>();
+   private ArrayList<String> UKpic = new ArrayList<>();
+   private ArrayList<String> UKNames = new ArrayList<>();
+   private MyCountries myCountries;
+private Fragmentcontainer fragmentcontainer;
     public UKChannels() {
 
     }
@@ -42,19 +43,17 @@ public class UKChannels extends Fragment {
 
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         //Save_UKLinks();
-        UKNames.clear();
-        UKpic1.clear();
-        Get_UKData();
         context = container.getContext();
-        //mainActivity = (MainActivity) getActivity();
         myCountries = new MyCountries();
+        fragmentcontainer=(Fragmentcontainer)getActivity();
+        Get_UKData();
         View UKChannelInf = inflater.inflate(R.layout.my_grid_view, container, false);
         UKchannels = (GridView) UKChannelInf.findViewById(R.id.MyGridView);
         UKchannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 //sport
-                myCountries.MyAlertDialog1(context, Uklink.get(i), UKpic1.get(i));
+                myCountries.MyAlertDialog1(context, Uklink.get(i), UKpic.get(i),UKNames.get(i));
                 /*
                 link.add(" http://mcdn-play-358.5centscdn.net:80/truemovies1extv/stream1.stream/playlist.m3u8");
                 link.add(" http://mcdn-play-358.5centscdn.net:80/sky1extv/stream1.stream/playlist.m3u8");
@@ -84,7 +83,6 @@ public class UKChannels extends Fragment {
         return UKchannels;
     }
 
-
     private void Save_UKLinks() {
         UKData ukData = new UKData();
         ukData.UKChannel_Link = "http://146.185.243.250:8000/play/rossija1";
@@ -96,39 +94,44 @@ public class UKChannels extends Fragment {
 
             @Override
             public void handleFault(BackendlessFault fault) {
-
+                Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
             }
         });
     }
-public static class ClassOne{
 
-}
-
-    public void Get_UKData() {
+    private void Get_UKData() {
+        fragmentcontainer.porgressdialog(context,"Getting Data");
         BackendlessDataQuery dataQuery = new BackendlessDataQuery();
         QueryOptions queryOptions = new QueryOptions();
         queryOptions.setPageSize(100);
         queryOptions.setOffset(0);
         dataQuery.setQueryOptions(queryOptions);
-
-
-        Backendless.Persistence.of(UKData.class).find(dataQuery, new AsyncCallback<BackendlessCollection<UKData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<UKData> response) {
-                for (UKData item : response.getData()) {
-                    Uklink.add(item.UKChannel_Link);
-                    UKpic1.add(item.UkChannel_Pic);
-                    UKNames.add(item.UkChannel_Name);
-
-                }
-                UKchannels.setAdapter(new MyCountryAdapter(context, UKpic1, UKNames));
-            }
-
-            @Override
-            public void handleFault(BackendlessFault fault) {
+try {
+    Backendless.Persistence.of(UKData.class).find(dataQuery, new AsyncCallback<BackendlessCollection<UKData>>() {
+        @Override
+        public void handleResponse(BackendlessCollection<UKData> response) {
+            for (UKData item : response.getData()) {
+                Uklink.add(item.UKChannel_Link);
+                UKpic.add(item.UkChannel_Pic);
+                UKNames.add(item.UkChannel_Name);
 
             }
-        });
+            UKchannels.setAdapter(new MyCountryAdapter(context, UKpic, UKNames));
+            fragmentcontainer.dismisprogress();
+            return;
+        }
+
+        @Override
+        public void handleFault(BackendlessFault fault) {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
+    });
+
+}catch (Exception e)
+{
+    Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+}
+
 
 
     }

@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -26,7 +27,6 @@ import com.backendless.exceptions.BackendlessFault;
 import com.backendless.persistence.BackendlessDataQuery;
 import com.backendless.persistence.QueryOptions;
 import com.example.moree.mytvapp1.Bulgaria.BulgariaChannels;
-import com.example.moree.mytvapp1.Denmark.DenmarkChannels;
 import com.example.moree.mytvapp1.EuropGoingToDelete.EUChannels;
 import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.Israel.IsraelChannels;
@@ -46,20 +46,20 @@ import com.example.moree.mytvapp1.utlShared;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.content.Context.MODE_PRIVATE;
+import cn.pedant.SweetAlert.SweetAlertDialog;
+import me.drakeet.materialdialog.MaterialDialog;
+
 import static com.example.moree.mytvapp1.R.id.myBookmarks;
 
 public class MyCountries extends Fragment {
-    Context context;
-    utlShared utlShared;
-    public GridView myCountryGist;
-    List<String> CountryFlags = new ArrayList<>();
-    List<String> CountryNames = new ArrayList<>();
-    ArrayList<String> Flink = new ArrayList<>();
-    Panel panel;
-    SharedPreferences sharedPreferences;
-    Fragmentcontainer fragmentcontainer;
-    MyCountryAdapter country;
+    private Context context;
+    private utlShared utlShared;
+    private GridView myCountryGist;
+    private List<String> CountryFlags = new ArrayList<>();
+    private List<String> CountryNames = new ArrayList<>();
+    private ArrayList<String> Flink = new ArrayList<>();
+    private Fragmentcontainer fragmentcontainer;
+    private Integer isdone = 0;
 
     public MyCountries() {
 
@@ -70,19 +70,10 @@ public class MyCountries extends Fragment {
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
         context = container.getContext();
         fragmentcontainer = (Fragmentcontainer) getActivity();
-        panel = new Panel();
-        Toast.makeText(context, "getting data", Toast.LENGTH_SHORT).show();
         getData();
         //we call class that hold sharedpreferenes
-        utlShared=new utlShared(context);
-        //we set where to save our data
-        //sharedPreferences=context.getSharedPreferences("Favorites",MODE_PRIVATE);
-        Toast.makeText(context, "got data from GetData()", Toast.LENGTH_SHORT).show();
+        utlShared = new utlShared(context);
         final View MyCountryInf = inflater.inflate(R.layout.my_grid_view, container, false);
-        //     pullRefreshLayout=(PullRefreshLayout)MyCountryInf.findViewById(R.id.swipeRefreshLayout);
-//        pullRefreshLayout.setRefreshDrawable(new SmartisanDrawable(context,pullRefreshLayout));
-        //country = new MyCountryAdapter(context, CountryFlags, CountryNames);
-        ;
         myCountryGist = (GridView) MyCountryInf.findViewById(R.id.MyGridView);
         myCountryGist.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
@@ -96,11 +87,9 @@ public class MyCountries extends Fragment {
                     case 1:
                         //checked
                         fragmentcontainer.nextFragment(R.id.fcontainer, new EUChannels());
-
                         break;
                     case 2:
                         //checked
-
                         fragmentcontainer.nextFragment(R.id.fcontainer, new IsraelChannels());
                         break;
                     case 3:
@@ -110,47 +99,19 @@ public class MyCountries extends Fragment {
                         break;
                     case 4:
                         //checked
-
                         fragmentcontainer.nextFragment(R.id.fcontainer, new RusChannels());
                         break;
-
                     case 5:
                         //checked
                         fragmentcontainer.nextFragment(R.id.fcontainer, new BulgariaChannels());
                         break;
-
                     case 6:
-                        //checked
-
-                        //activity.nextFragment(R.id.fcontainer, new CroatiaChannels());
-                        Toast.makeText(context, "UN Active", Toast.LENGTH_SHORT).show();
-                        break;
-                    case 7:
-                        //checked
-
-                        fragmentcontainer.nextFragment(R.id.fcontainer, new DenmarkChannels());
-                        break;
-                    case 8:
                         //checked
                         fragmentcontainer.nextFragment(R.id.fcontainer, new ItalyChannels());
                         break;
-                    case 9:
+                    case 7:
                         //checked
-                        // panel.netcheck();
-
                         fragmentcontainer.nextFragment(R.id.fcontainer, new TurkyChannels());
-                        break;
-                    case 10:
-                        //checked
-                        //activity.nextFragment(R.id.fcontainer, new NetherlandChannels());
-                        //panel.netcheck();
-
-                        Toast.makeText(context, "UN Active", Toast.LENGTH_SHORT).show();
-                        break;
-                    case 11:
-                        //checked
-                        //activity.nextFragment(R.id.fcontainer, new SerbiaChannels());
-                        Toast.makeText(context, "UN Active", Toast.LENGTH_SHORT).show();
                         break;
 
 
@@ -164,14 +125,18 @@ public class MyCountries extends Fragment {
     }
 
 //getting data from backendless
-    private void getData() {
-        //progress dailog
+
+    @Override
+    public void onStop() {
+        super.onStop();
         CountryFlags.clear();
         CountryNames.clear();
-        final ProgressDialog progressDialog = new ProgressDialog(context);
-        progressDialog.setTitle("Getting Data");
-        progressDialog.setMessage("Please Wait");
-        progressDialog.show();
+    }
+
+
+    private void getData() {
+        //progress dailog
+        fragmentcontainer.porgressdialog(context, "Getting Data");
         /////////////////////////////////
         BackendlessDataQuery dataQuery = new BackendlessDataQuery();
         QueryOptions queryOptions = new QueryOptions();
@@ -179,7 +144,7 @@ public class MyCountries extends Fragment {
         queryOptions.setOffset(0);
         dataQuery.setQueryOptions(queryOptions);
 //mycountrydata is name of the table also name of the class that takes each colume
-        Backendless.Persistence.of(MyCountryData.class).find(dataQuery,new AsyncCallback<BackendlessCollection<MyCountryData>>() {
+        Backendless.Persistence.of(MyCountryData.class).find(dataQuery, new AsyncCallback<BackendlessCollection<MyCountryData>>() {
             @Override
             public void handleResponse(BackendlessCollection<MyCountryData> response) {
                 //for each data from our table
@@ -189,17 +154,17 @@ public class MyCountries extends Fragment {
                     CountryFlags.add(data.CountryPic);
                     CountryNames.add(data.CountryName);
                     Flink.add(data.CountryName);
-                    //dissmis our progress dialog
-                progressDialog.dismiss();
+                    Find(context);
+                    fragmentcontainer.dismisprogress();
                 }
                 myCountryGist.setAdapter(new MyCountryAdapter(context, CountryFlags, CountryNames));
                 return;
             }
-//if there was error it will show
+
+            //if there was error it will show
             @Override
             public void handleFault(BackendlessFault fault) {
-                Toast.makeText(context, "Network Error" + fault.getMessage() + fault.getCode(), Toast.LENGTH_SHORT).show();
-                progressDialog.dismiss();
+                Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -213,39 +178,58 @@ public class MyCountries extends Fragment {
 
 
     public void Find(final Context context) {
-        this.context = context;
-        final ProgressDialog pd = new ProgressDialog(context);
+
+       /* final ProgressDialog pd = new ProgressDialog(context);
+        pd.setProgressDrawable(ContextCompat.getDrawable(context,R.drawable.roundedbutton_black));
         pd.setMessage("Loading");
         pd.setCancelable(false);
-        pd.show();
+        pd.show();*/
+      /*
+        final SweetAlertDialog checkData = new SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE);
+        checkData.setTitleText("Loading");
+        checkData.setCancelable(false);
+        checkData.show();*/
+            Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<FavoriteData> response) {
+                    for (FavoriteData item : response.getData()) {
+                        Flink.add(item.FavoriteLink);
 
+                      /*  checkData.setCancelable(true);
+                        checkData.dismiss();*/
+                    }
+                }
 
+                @Override
+                public void handleFault(BackendlessFault fault) {
+                }
+            });
+
+    }
+//quick find to the save links
+    ///////////////////////////////////////////////////
+
+    public void MyAlertDialog1(final Context context, final String SaveLink, final String SavePic, final String SaveName) {
+        this.context = context;
+        Toast.makeText(context, "My Alert", Toast.LENGTH_SHORT).show();
+        //my alert
         Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
             @Override
             public void handleResponse(BackendlessCollection<FavoriteData> response) {
                 for (FavoriteData item : response.getData()) {
                     Flink.add(item.FavoriteLink);
-
+                      /*  checkData.setCancelable(true);
+                        checkData.dismiss();*/
                 }
-                pd.setCancelable(true);
-                pd.dismiss();
             }
 
             @Override
             public void handleFault(BackendlessFault fault) {
             }
         });
-
-
-    }
-
-
-    public void MyAlertDialog1(final Context context, final String SaveLink, final String SavePic) {
-        this.context = context;
-        Toast.makeText(context, "My Alert", Toast.LENGTH_SHORT).show();
-        //my alert
-        // Find(context);
-        final AlertDialog.Builder mysingleAlert = new AlertDialog.Builder(context);
+        final MaterialDialog mysingleAlert = new MaterialDialog(context);
+        //final MaterialDialog mysingleAlert = new MaterialDialog(context);
+        // final AlertDialog.Builder mysingleAlert = new AlertDialog.Builder(context);
         // my inflate for my alert
         final View FavoriteIn = LayoutInflater.from(context).inflate(R.layout.alert_favorite, null, false);
         //my bookmark sign
@@ -255,28 +239,26 @@ public class MyCountries extends Fragment {
         Picasso.with(context)
                 .load(SavePic)
                 .into(Image);
-
-        mysingleAlert.setPositiveButton("Play Video", new DialogInterface.OnClickListener() {
+        mysingleAlert.setPositiveButton("play Channel", new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-
+            public void onClick(View v) {
                 Intent intent = new Intent(context, Video.class);
                 intent.putExtra("link", (SaveLink));
                 context.startActivity(intent);
             }
         });
-
-        mysingleAlert.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+        mysingleAlert.setNegativeButton("Cancel", new View.OnClickListener() {
             @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
+            public void onClick(View v) {
+                mysingleAlert.dismiss();
             }
         });
         if (Flink.isEmpty()) {
-            bookmarks.setTextColor(Color.WHITE);
+            bookmarks.setTextColor(Color.BLACK);
         }
         if (Flink.contains(SaveLink)) {
-            bookmarks.setTextColor(Color.YELLOW);
+            bookmarks.setTextColor(ContextCompat.getColor(context, R.color.yellow));
+            Toast.makeText(context, "Channel Exists", Toast.LENGTH_SHORT).show();
             mysingleAlert.setView(FavoriteIn);
             mysingleAlert.show();
             return;
@@ -284,16 +266,11 @@ public class MyCountries extends Fragment {
             bookmarks.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    final ProgressDialog pd = new ProgressDialog(context);
-                    pd.setMessage("Loading");
-                    pd.setCancelable(false);
-                    pd.show();
                     Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
                         @Override
                         public void handleResponse(BackendlessCollection<FavoriteData> response) {
-                            for (FavoriteData item : response.getData()) {
+                            for (final FavoriteData item : response.getData()) {
                                 Flink.add(item.FavoriteLink);
-
                             }
 
                         }
@@ -303,15 +280,16 @@ public class MyCountries extends Fragment {
 
                         }
                     });
+
                     if (Flink.contains(SaveLink)) {
-                        bookmarks.setTextColor(Color.YELLOW);
+                        bookmarks.setTextColor(ContextCompat.getColor(context,R.color.yellow));
+                        Toast.makeText(context, "Channel Exists", Toast.LENGTH_SHORT).show();
                         Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
                             @Override
                             public void handleResponse(BackendlessCollection<FavoriteData> response) {
                                 for (FavoriteData item : response.getData()) {
                                     Flink.add(item.FavoriteLink);
-                                    Toast.makeText(context, "pd was dissmissed", Toast.LENGTH_SHORT).show();
-                                    pd.dismiss();
+                                bookmarks.setTextColor(ContextCompat.getColor(context,R.color.yellow));
                                 }
                             }
 
@@ -320,13 +298,29 @@ public class MyCountries extends Fragment {
 
                             }
                         });
-                        pd.dismiss();
                         return;
                     } else {
                         AsyncCallback<FavoriteData> favoriteDataAsyncCallback = new AsyncCallback<FavoriteData>() {
                             @Override
                             public void handleResponse(FavoriteData response) {
 
+                                Toast.makeText(context, "Toas1", Toast.LENGTH_SHORT).show();
+                                Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
+                                    @Override
+                                    public void handleResponse(BackendlessCollection<FavoriteData> response) {
+                                        for (FavoriteData item : response.getData()) {
+                                            Flink.add(item.FavoriteLink);
+                                            bookmarks.setTextColor(ContextCompat.getColor(context,R.color.yellow));
+
+                      /*  checkData.setCancelable(true);
+                        checkData.dismiss();*/
+                                        }
+                                    }
+
+                                    @Override
+                                    public void handleFault(BackendlessFault fault) {
+                                    }
+                                });
                             }
 
                             @Override
@@ -338,11 +332,25 @@ public class MyCountries extends Fragment {
                         utlShared = new utlShared(context);
                         fData.FavoriteLink = SaveLink;
                         fData.FavoritePic = SavePic;
+                        fData.FavoriteName = SaveName;
                         fData.ownerId = utlShared.getId("");
                         Backendless.Data.of(FavoriteData.class).save(fData, favoriteDataAsyncCallback);
-                        bookmarks.setTextColor(Color.YELLOW);
-                        pd.dismiss();
-                        Find(context);
+                        bookmarks.setTextColor(ContextCompat.getColor(context, R.color.yellow));
+                        Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
+                            @Override
+                            public void handleResponse(BackendlessCollection<FavoriteData> response) {
+                                for (FavoriteData item : response.getData()) {
+                                    Flink.add(item.FavoriteLink);
+
+                      /*  checkData.setCancelable(true);
+                        checkData.dismiss();*/
+                                }
+                            }
+
+                            @Override
+                            public void handleFault(BackendlessFault fault) {
+                            }
+                        });
                         return;
 
                     }
@@ -350,7 +358,7 @@ public class MyCountries extends Fragment {
                 }
             });
         }
-        mysingleAlert.setView(FavoriteIn);
+        mysingleAlert.setContentView(FavoriteIn);
         mysingleAlert.show();
     }
 

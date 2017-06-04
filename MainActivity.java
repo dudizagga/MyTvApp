@@ -1,9 +1,12 @@
 package com.example.moree.mytvapp1;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.provider.Settings;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
@@ -14,6 +17,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
@@ -30,9 +34,14 @@ import com.example.moree.mytvapp1.MyFavorite.FavoriteData;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import cn.pedant.SweetAlert.SweetAlertDialog;
+import me.drakeet.materialdialog.MaterialDialog;
 import weborb.client.Fault;
 
+import static android.R.attr.actionModeBackground;
 import static android.R.attr.password;
+import static android.R.attr.spinnerStyle;
+import static android.R.attr.windowShowAnimation;
 
 //our main activity have the login and register methods
 public class MainActivity extends AppCompatActivity {
@@ -47,21 +56,21 @@ public class MainActivity extends AppCompatActivity {
     //layout are apart of our edittext
     private TextInputLayout layout_Email, layout_Pass;
     //we need to call Favorite to use it later on
-     private Favorite favorite;
-     //utlshared is shared preferences that we use to our log in
+    private ProgressDialog progressDialog;
+    //utlshared is shared preferences that we use to our log in
     private utlShared ut;
     //logged is a boolean that we use it to save true or false to shared preferences
-    private boolean logged;
-    private MainActivity activity;
+    private boolean logged = false;
 
-     public void  setLogged(Boolean log)
-     {
-         this.logged=log;
-     }
-     public Boolean loged()
-     {
-         return logged;
-     }
+    public void setLogged(Boolean log) {
+        this.logged = log;
+    }
+
+    public Boolean loged() {
+
+        return logged;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,11 +82,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-
     private void setPointer() {
         this.context = this;
         //we call new favorites to use its variables
-        favorite = new Favorite();
+        // favorite = new Favorite();
         //we call new utlshared to use it
         ut = new utlShared(context);
         //we set logged as false since logged is boolean and utlshared has a method called getbol(Boolean logged)
@@ -106,25 +114,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         //method that checks if logged is true or false for out login in
-       // logi();
+        logi();
+
     }
-
-
-
-    public void logi() {
+    private void logi() {
         //if logged is true it shows on the screen log is true also goes to staylogged();
         if (logged == true) {
             StayLogged();
-            Toast.makeText(context, "log is true ", Toast.LENGTH_SHORT).show();
         } else {
             //if logged is false then it stays on the login screen and it wont go o the next screen till you login
-            Toast.makeText(context, "log is false ", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "login Failed ", Toast.LENGTH_SHORT).show();
         }
     }
 
 
     //our method that checks if the last user did logged in and logged is true and to goes to the next screen
-    protected void StayLogged() {
+    private void StayLogged() {
 //checks if last user was online
         AsyncCallback<Boolean> checkuser = new AsyncCallback<Boolean>() {
             @Override
@@ -132,6 +137,7 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(context, "User Logged", Toast.LENGTH_SHORT).show();
                 Intent First = new Intent(context, Fragmentcontainer.class);
                 startActivity(First);
+                finish();
             }
 
             @Override
@@ -143,18 +149,20 @@ public class MainActivity extends AppCompatActivity {
         Backendless.UserService.isValidLogin(checkuser);
     }
 
+
     //method that check login
     private void Login() {
-        //String Email to get from Edit Text
+
+
         final String Email = userId.getText().toString();
-        //String Password to get text to string from edit text use pass
         final String Pass = usePass.getText().toString();
+        //String Email to get from Edit Text
+        //String Password to get text to string from edit text use pass
 ///check if if not input to our Edit text Email and Pass
         if (Email.isEmpty()) {
             //layout that show error its its empty
             layout_Email.setErrorTextAppearance(R.style.error_appearance);
             layout_Email.setError("Enter you Email");
-
         } else {
             //if is not empty error goes away
             layout_Email.setError(null);
@@ -163,7 +171,7 @@ public class MainActivity extends AppCompatActivity {
         if (Pass.isEmpty()) {
             layout_Pass.setErrorTextAppearance(R.style.error_appearance);
             //set text for our error with it happens
-            layout_Pass.setError("Enter Passord");
+            layout_Pass.setError("Enter Password");
             return;
         }
         if (usePass.getText().toString().length() < 6) {
@@ -174,7 +182,9 @@ public class MainActivity extends AppCompatActivity {
             layout_Pass.setError(null);
         }
         try {
-//try to login  with Email and pass
+            fragmentcontainer.porgressdialog(context, "Logging in");
+
+            //try to login  with Email and pass
             Backendless.UserService.login(Email, Pass, new AsyncCallback<BackendlessUser>() {
                 @Override
                 public void handleResponse(BackendlessUser response) {
@@ -182,8 +192,6 @@ public class MainActivity extends AppCompatActivity {
                     String a = Backendless.UserService.CurrentUser().getUserId();
                     //save key with shared preferences incase user logged in automaticaly
                     ut.putId(a);
-
-                    Toast.makeText(context, "myId: " + a, Toast.LENGTH_SHORT).show();
                     //if Email and pass are ok then it goies to our next screen
                     //our distenation to Fragmentcontainer
                     Intent First = new Intent(context, Fragmentcontainer.class);
@@ -191,12 +199,13 @@ public class MainActivity extends AppCompatActivity {
                     startActivity(First);
                     //looged is set true so next time he opens our app it know he did logged in and didnt log out
                     logged = ut.putBol(true);
-                    Toast.makeText(context, "logged: " + ut.putBol(true), Toast.LENGTH_SHORT).show();
+                    fragmentcontainer.dismisprogress();
                 }
 
                 @Override
                 public void handleFault(BackendlessFault fault) {
-//if email pass is wrong it wont log in and if wifi is not turned on it will say network error
+                    //if email pass is wrong it wont log in and if wifi is not turned on it will say network error
+                    fragmentcontainer.dismisprogress();
                     if (fault.getCode().equals("3003")) {
                         Toast.makeText(context, "Error E-mail or Password", Toast.LENGTH_LONG).show();
                     } else {
@@ -204,17 +213,17 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
                 //when it logged in it set that the Email has logged is true means it will log in auto
-            }, logged = ut.getBol(true));
+            },logged = ut.getBol(true));//logged = ut.getBol(true)
         } catch (Exception e) {
-            Toast.makeText(context, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Error Input Email or Pass", Toast.LENGTH_SHORT).show();
         }
-
     }
 
     ///alert dialog to register our email and pasword
     private void Register() {
-
-        final AlertDialog myRegister = new AlertDialog.Builder(context).create();
+        final MaterialDialog myRegister = new MaterialDialog(context);
+        myRegister.setBackgroundResource(R.drawable.roundedbutton);
+        //final AlertDialog myRegister = new AlertDialog.Builder(context).create();
         //final AlertDialog optionAlert =myRegister.create();
         //inflate view from xml =layout to view our alert dialog
         View inflateRegister = LayoutInflater.from(context).inflate(R.layout.register, null, false);
@@ -257,8 +266,7 @@ public class MainActivity extends AppCompatActivity {
                     pass1.setError("please Enter Password");
                     pass1.setErrorTextAppearance(R.style.error_appearance);
                     return;
-                }else
-                {//if pass is not empty error will go away
+                } else {//if pass is not empty error will go away
                     pass1.setError(null);
                 }
                 //if pass text is lower than 6 it will show error
@@ -279,23 +287,25 @@ public class MainActivity extends AppCompatActivity {
 //if evverying is okay it will register Email and password
                 //we call Backendlessuser that is apart with backendless methods
                 BackendlessUser RegisterUser = new BackendlessUser();
- // set property is to get name of the colum that we want to input in our  users table
+                // set property is to get name of the colum that we want to input in our  users table
                 RegisterUser.setProperty("email", username.getText().toString());
                 RegisterUser.setProperty("password", userpass1.getText().toString());
                 try {
-
 //then we register
+                    fragmentcontainer.porgressdialog(context,"signing in...");
                     Backendless.UserService.register(RegisterUser, new AsyncCallback<BackendlessUser>() {
                         @Override
                         public void handleResponse(BackendlessUser response) {
 //if Email is ok and pass
                             Toast.makeText(context, "User Registed", Toast.LENGTH_SHORT).show();
                             myRegister.dismiss();
+                            fragmentcontainer.dismisprogress();
                         }
 
                         @Override
                         public void handleFault(BackendlessFault fault) {
-                         //if email exists
+                            //if email exists
+                            fragmentcontainer.dismisprogress();
                             if (fault.getCode().equals("3033")) {
                                 Email.setErrorTextAppearance(R.style.error_appearance);
                                 Email.setError("Email Already Exists");
@@ -311,14 +321,14 @@ public class MainActivity extends AppCompatActivity {
                     });
 //if there was an error it will show the error
                 } catch (Exception e) {
-                    Toast.makeText(context, "Please Enter the Following!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(context, "Please Enter the Following!" + e.getMessage(), Toast.LENGTH_SHORT).show();
                 }
             }
 
 
         });
 //add view  to our alert dialog with the inflate that we made from xml
-        myRegister.setView(inflateRegister);
+       myRegister.setView(inflateRegister);
         //we show our alert dialog .show
         myRegister.show();
 

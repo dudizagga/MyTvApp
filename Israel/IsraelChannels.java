@@ -10,11 +10,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -27,13 +31,13 @@ import java.util.ArrayList;
  */
 
 public class IsraelChannels extends Fragment {
-    Context context;
-    ArrayList<String> ILlink = new ArrayList<>();
-    ArrayList<String> ILPics = new ArrayList<>();
-    ArrayList<String> ILNames = new ArrayList<>();
-    MyCountries myCountries;
-    GridView ILchannels;
-
+    private Context context;
+    private ArrayList<String> ILlink = new ArrayList<>();
+    private ArrayList<String> ILPics = new ArrayList<>();
+    private ArrayList<String> ILNames = new ArrayList<>();
+    private MyCountries myCountries;
+    private GridView ILchannels;
+    private Fragmentcontainer fragmentcontainer;
 
     public IsraelChannels() {
 
@@ -45,17 +49,15 @@ public class IsraelChannels extends Fragment {
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         context = container.getContext();
         //  Save_ILLinks();
-        ILlink.clear();
-        ILPics.clear();
+        fragmentcontainer = (Fragmentcontainer) getActivity();
         Get_ILData();
         myCountries = new MyCountries();
-        myCountries.Find(context);
         View ILChannelInf = inflater.inflate(R.layout.my_grid_view, container, false);
         ILchannels = (GridView) ILChannelInf.findViewById(R.id.MyGridView);
         ILchannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-            myCountries.MyAlertDialog1(context,ILNames.get(i),ILPics.get(i));
+                myCountries.MyAlertDialog1(context, ILlink.get(i), ILPics.get(i), ILNames.get(i));
             }
         });
 
@@ -68,6 +70,7 @@ public class IsraelChannels extends Fragment {
         });
         return ILChannelInf;
     }
+
 
     private void Save_ILLinks() {
         IsraelData israelData = new IsraelData();
@@ -86,21 +89,37 @@ public class IsraelChannels extends Fragment {
     }
 
     private void Get_ILData() {
-        Backendless.Persistence.of(IsraelData.class).find(new AsyncCallback<BackendlessCollection<IsraelData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<IsraelData> response) {
-                for (IsraelData item : response.getData()) {
-                    ILlink.add(item.ILChannel_Link);
-                    ILPics.add(item.ILChannel_Pic);
-                    ILNames.add(item.ILChannel_Name);
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+        fragmentcontainer.porgressdialog(context, "Getting Data");
+        try {
+
+
+            Backendless.Persistence.of(IsraelData.class).find(dataQuery,new AsyncCallback<BackendlessCollection<IsraelData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<IsraelData> response) {
+                    for (IsraelData item : response.getData()) {
+                        ILlink.add(item.ILChannel_Link);
+                        ILPics.add(item.ILChannel_Pic);
+                        ILNames.add(item.ILChannel_Name);
+                    }
+                    ILchannels.setAdapter(new MyCountryAdapter(context, ILPics, ILNames));
+                    fragmentcontainer.dismisprogress();
+                    return;
                 }
-                ILchannels.setAdapter(new MyCountryAdapter(context, ILPics, ILNames));
-            }
 
-            @Override
-            public void handleFault(BackendlessFault fault) {
-
-            }
-        });
+                @Override
+                public void handleFault(BackendlessFault fault) {
+                    Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show();
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
     }
+
+
 }

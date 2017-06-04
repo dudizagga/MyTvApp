@@ -10,11 +10,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -27,12 +31,13 @@ import java.util.ArrayList;
  */
 
 public class RusChannels extends Fragment {
-    Context context;
-    ArrayList<String> Ruslink = new ArrayList<>();
-    ArrayList<String> RusPics = new ArrayList<>();
-    ArrayList<String> RusNames = new ArrayList<>();
-     GridView RUschannels;
-    MyCountries myCountries;
+    private Context context;
+    private ArrayList<String> Ruslink = new ArrayList<>();
+    private ArrayList<String> RusPics = new ArrayList<>();
+    private ArrayList<String> RusNames = new ArrayList<>();
+    private GridView RUschannels;
+    private MyCountries myCountries;
+    private Fragmentcontainer fragmentcontainer;
 
     public RusChannels() {
     }
@@ -41,30 +46,29 @@ public class RusChannels extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         // Save_RusLinks();
-        RusPics.clear();
-        Get_RusData();
         context = container.getContext();
-        myCountries=new MyCountries();
+        myCountries = new MyCountries();
+        fragmentcontainer = (Fragmentcontainer) getActivity();
+        Get_RusData();
         myCountries.Find(context);
         View RUSChannelInf = inflater.inflate(R.layout.my_grid_view, container, false);
-        RUschannels= (GridView) RUSChannelInf.findViewById(R.id.MyGridView);
+        RUschannels = (GridView) RUSChannelInf.findViewById(R.id.MyGridView);
         RUschannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-            myCountries.MyAlertDialog1(context,Ruslink.get(i),RusPics.get(i));
+                myCountries.MyAlertDialog1(context, Ruslink.get(i), RusPics.get(i), RusNames.get(i));
 
             }
         });
         RUschannels.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                myCountries.MyAlertDialog2(context,RusNames.get(position),RusPics.get(position));
+                myCountries.MyAlertDialog2(context, RusNames.get(position), RusPics.get(position));
                 return false;
             }
         });
         return RUSChannelInf;
     }
-
 
     private void Save_RusLinks() {
         RusData rusData = new RusData();
@@ -83,21 +87,34 @@ public class RusChannels extends Fragment {
     }
 
     private void Get_RusData() {
-        Backendless.Persistence.of(RusData.class).find(new AsyncCallback<BackendlessCollection<RusData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<RusData> response) {
-                for (RusData item : response.getData()) {
-                    Ruslink.add(item.RusChannel_Link);
-                    RusPics.add(item.RusChannel_Pic);
-                    RusNames.add(item.RusChannel_Name);
+        fragmentcontainer.porgressdialog(context,"Getting Data");
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+        try {
+            Backendless.Persistence.of(RusData.class).find(dataQuery, new AsyncCallback<BackendlessCollection<RusData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<RusData> response) {
+                    for (RusData item : response.getData()) {
+                        Ruslink.add(item.RusChannel_Link);
+                        RusPics.add(item.RusChannel_Pic);
+                        RusNames.add(item.RusChannel_Name);
+                    }
+                    RUschannels.setAdapter(new MyCountryAdapter(context, RusPics, RusNames));
+                fragmentcontainer.dismisprogress();
+                    return;
                 }
-                RUschannels.setAdapter(new MyCountryAdapter(context,RusPics,RusNames));
-            }
 
-            @Override
-            public void handleFault(BackendlessFault fault) {
+                @Override
+                public void handleFault(BackendlessFault fault) {
+                    Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+                }
+            });
 
-            }
-        });
+        } catch (Exception e) {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
     }
 }

@@ -16,6 +16,9 @@ import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -28,28 +31,29 @@ import java.util.ArrayList;
  */
 
 public class MoviesChannels extends Fragment {
-    Context context;
-    ArrayList<String> getTvShowsPics = new ArrayList<>();
-    ArrayList<String> getTvShowsLinks = new ArrayList<>();
-    ArrayList<String> getTvShowsNames = new ArrayList<>();
-    public GridView listTvShows;
-    MyCountries myCountries;
+    private Context context;
+    private ArrayList<String> getTvShowsPics = new ArrayList<>();
+    private ArrayList<String> getTvShowsLinks = new ArrayList<>();
+    private ArrayList<String> getTvShowsNames = new ArrayList<>();
+    private GridView listTvShows;
+    private MyCountries myCountries;
+    private Fragmentcontainer fragmentcontainer;
 
     @Nullable
     @Override
     public View onCreateView(final LayoutInflater inflater, @Nullable final ViewGroup container, Bundle savedInstanceState) {
         context = container.getContext();
-
+        myCountries = new MyCountries();
+        fragmentcontainer = (Fragmentcontainer) getActivity();
         //saveTvShow();
         getTvShow();
-        myCountries=new MyCountries();
         Toast.makeText(context, "TvShow", Toast.LENGTH_SHORT).show();
         View movInf = inflater.inflate(R.layout.activity_categories, container, false);
         listTvShows = (GridView) movInf.findViewById(R.id.TvShow);
         listTvShows.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                myCountries.MyAlertDialog1(context,getTvShowsLinks.get(i),getTvShowsPics.get(i));
+                myCountries.MyAlertDialog1(context, getTvShowsLinks.get(i), getTvShowsPics.get(i), getTvShowsNames.get(i));
 /*
                 Intent intent = new Intent(context,Video.class);
                 intent.setData(Uri.parse(String.valueOf(getTvShowsNames.get(i))));
@@ -58,19 +62,17 @@ public class MoviesChannels extends Fragment {
             }
 
         });
-listTvShows.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-    @Override
-    public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+        listTvShows.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
 
-        return false;
-    }
-});
+                return false;
+            }
+        });
 
         return movInf;
 
     }
-
-
 
 
     private void saveTvShow() {
@@ -91,23 +93,36 @@ listTvShows.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener()
     }
 
     private void getTvShow() {
-
-        Backendless.Persistence.of(MoviesData.class).find(new AsyncCallback<BackendlessCollection<MoviesData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<MoviesData> response) {
-                for (MoviesData item : response.getData()) {
-                    getTvShowsLinks.add(item.MoviesChannel_Link);
-                    getTvShowsPics.add(item.MoviesChannel_Pic);
-                    getTvShowsNames.add(item.Movies_names);
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+        fragmentcontainer.porgressdialog(context, "Getting Data");
+        try
+        {
+            Backendless.Persistence.of(MoviesData.class).find(dataQuery,new AsyncCallback<BackendlessCollection<MoviesData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<MoviesData> response) {
+                    for (MoviesData item : response.getData()) {
+                        getTvShowsLinks.add(item.MoviesChannel_Link);
+                        getTvShowsPics.add(item.MoviesChannel_Pic);
+                        getTvShowsNames.add(item.Movies_names);
+                    }
+                    listTvShows.setAdapter(new MyCountryAdapter(context, getTvShowsPics, getTvShowsNames));
+                    fragmentcontainer.dismisprogress();
+                    return;
                 }
-                listTvShows.setAdapter(new MyCountryAdapter(context, getTvShowsPics, getTvShowsNames));
-                return;
-            }
 
-            @Override
-            public void handleFault(BackendlessFault fault) {
+                @Override
+                public void handleFault(BackendlessFault fault) {
+                    Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+                }
+            });
 
-            }
-        });
+        }catch (Exception e)
+        {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
     }
 }

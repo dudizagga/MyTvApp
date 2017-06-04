@@ -10,11 +10,15 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -24,12 +28,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class EUChannels extends Fragment {
-    Context context;
-    List<String> Greeklink = new ArrayList<>();
-    List<String> GreekPics1 = new ArrayList<>();
-    List<String> GreekNames = new ArrayList<>();
-    GridView EUchannels;
-    MyCountries myCountries;
+    private Context context;
+    private List<String> Eulink = new ArrayList<>();
+    private List<String> EuPics = new ArrayList<>();
+    private List<String> EuNames = new ArrayList<>();
+    private Fragmentcontainer fragmentcontainer;
+    private GridView EUchannels;
+    private MyCountries myCountries;
 
     public EUChannels() {
     }
@@ -40,15 +45,15 @@ public class EUChannels extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         context = container.getContext();
         myCountries = new MyCountries();
+        fragmentcontainer = (Fragmentcontainer) getActivity();
         //Save_EuLinks();
         Get_EuData();
-        myCountries.Find(context);
         View EUChannelInf = inflater.inflate(R.layout.my_grid_view, container, false);
         EUchannels = (GridView) EUChannelInf.findViewById(R.id.MyGridView);
         EUchannels.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                myCountries.MyAlertDialog1(context,Greeklink.get(i),GreekPics1.get(i));
+                myCountries.MyAlertDialog1(context, Eulink.get(i), EuPics.get(i), EuNames.get(i));
             }
         });
         EUchannels.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
@@ -60,6 +65,7 @@ public class EUChannels extends Fragment {
         });
         return EUchannels;
     }
+
 
     private void Save_EuLinks() {
         EuData euData = new EuData();
@@ -79,24 +85,37 @@ public class EUChannels extends Fragment {
 
 
     private void Get_EuData() {
-        Backendless.Persistence.of(EuData.class).find(new AsyncCallback<BackendlessCollection<EuData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<EuData> response) {
-                for (EuData item : response.getData()) {
-                    Greeklink.add(item.EuChannel_Link);
-                    GreekPics1.add(item.EuChannel_Pic);
-                    GreekNames.add(item.EuChannel_Name);
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+       fragmentcontainer.porgressdialog(context,"Getting Data");
+        try {
+            Backendless.Persistence.of(EuData.class).find(dataQuery,new AsyncCallback<BackendlessCollection<EuData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<EuData> response) {
+                    for (EuData item : response.getData()) {
+                        Eulink.add(item.EuChannel_Link);
+                        EuPics.add(item.EuChannel_Pic);
+                        EuNames.add(item.EuChannel_Name);
 
+                    }
+                    EUchannels.setAdapter(new MyCountryAdapter(context, EuPics, EuNames));
+                    fragmentcontainer.dismisprogress();
+                    return;
                 }
-                EUchannels.setAdapter(new MyCountryAdapter(context, GreekPics1, GreekNames));
-            }
 
-            @Override
-            public void handleFault(BackendlessFault fault) {
+                @Override
+                public void handleFault(BackendlessFault fault) {
+                    Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+                }
 
-            }
+            });
 
-        });
+        } catch (Exception e) {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
     }
 
 }

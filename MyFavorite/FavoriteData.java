@@ -8,5 +8,6 @@ public class FavoriteData {
     public String FavoriteLink;
     public String FavoritePic;
     public String objectId;
+    public String FavoriteName;
     public String ownerId;
 }

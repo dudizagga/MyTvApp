@@ -16,6 +16,9 @@ import com.backendless.Backendless;
 import com.backendless.BackendlessCollection;
 import com.backendless.async.callback.AsyncCallback;
 import com.backendless.exceptions.BackendlessFault;
+import com.backendless.persistence.BackendlessDataQuery;
+import com.backendless.persistence.QueryOptions;
+import com.example.moree.mytvapp1.Fragmentcontainer;
 import com.example.moree.mytvapp1.MyCountries.MyCountries;
 import com.example.moree.mytvapp1.MyCountries.MyCountryAdapter;
 import com.example.moree.mytvapp1.R;
@@ -29,18 +32,19 @@ import java.util.ArrayList;
 
 public class MusicChannels extends Fragment {
 
-    Context context;
-    ArrayList<String> getMusicPics = new ArrayList<>();
-    ArrayList<String> getMusicLinks = new ArrayList<>();
-    ArrayList<String> getMusicNames = new ArrayList<>();
-    MyCountries myCountries;
-    public GridView listMusic;
+    private Context context;
+    private ArrayList<String> getMusicPics = new ArrayList<>();
+    private ArrayList<String> getMusicLinks = new ArrayList<>();
+    private ArrayList<String> getMusicNames = new ArrayList<>();
+    private MyCountries myCountries;
+    private Fragmentcontainer fragmentcontainer;
+    private GridView listMusic;
 
     @Nullable
     @Override
     public View onCreateView(final LayoutInflater inflater, @Nullable final ViewGroup container, Bundle savedInstanceState) {
         context = container.getContext();
-        Toast.makeText(context, "Music", Toast.LENGTH_SHORT).show();
+        fragmentcontainer = (Fragmentcontainer) getActivity();
         getMusicData();
         // savedata();
         myCountries = new MyCountries();
@@ -49,7 +53,7 @@ public class MusicChannels extends Fragment {
         listMusic.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                myCountries.MyAlertDialog1(context,getMusicLinks.get(i),getMusicPics.get(i));
+                myCountries.MyAlertDialog1(context, getMusicLinks.get(i), getMusicPics.get(i), getMusicNames.get(i));
             }
 
         });
@@ -64,24 +68,37 @@ public class MusicChannels extends Fragment {
 
     }
 
+
     private void getMusicData() {
-        Backendless.Persistence.of(MusicData.class).find(new AsyncCallback<BackendlessCollection<MusicData>>() {
-            @Override
-            public void handleResponse(BackendlessCollection<MusicData> response) {
-                for (MusicData item : response.getData()) {
-                    getMusicLinks.add(item.MusicChannel_Link);
-                    getMusicPics.add(item.MusicChannel_Pic);
-                    getMusicNames.add(item.Music_Name);
+        BackendlessDataQuery dataQuery = new BackendlessDataQuery();
+        QueryOptions queryOptions = new QueryOptions();
+        queryOptions.setPageSize(100);
+        queryOptions.setOffset(0);
+        dataQuery.setQueryOptions(queryOptions);
+        fragmentcontainer.porgressdialog(context, "Getting Data");
+        try {
+            Backendless.Persistence.of(MusicData.class).find(dataQuery,new AsyncCallback<BackendlessCollection<MusicData>>() {
+                @Override
+                public void handleResponse(BackendlessCollection<MusicData> response) {
+                    for (MusicData item : response.getData()) {
+                        getMusicLinks.add(item.MusicChannel_Link);
+                        getMusicPics.add(item.MusicChannel_Pic);
+                        getMusicNames.add(item.Music_Name);
+                    }
+
+                    listMusic.setAdapter(new MyCountryAdapter(context, getMusicPics, getMusicNames));
+                    fragmentcontainer.dismisprogress();
+                    return;
                 }
 
-                listMusic.setAdapter(new MyCountryAdapter(context, getMusicPics, getMusicNames));
-                return;
-            }
+                @Override
+                public void handleFault(BackendlessFault fault) {
 
-            @Override
-            public void handleFault(BackendlessFault fault) {
+                }
+            });
 
-            }
-        });
+        } catch (Exception e) {
+            Toast.makeText(context, "Error Network", Toast.LENGTH_SHORT).show();
+        }
     }
 }
