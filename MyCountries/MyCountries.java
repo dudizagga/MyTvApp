@@ -184,11 +184,11 @@ public class MyCountries extends Fragment {
         pd.setMessage("Loading");
         pd.setCancelable(false);
         pd.show();*/
-      /*
+
         final SweetAlertDialog checkData = new SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE);
         checkData.setTitleText("Loading");
         checkData.setCancelable(false);
-        checkData.show();*/
+        checkData.show();
             Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
                 @Override
                 public void handleResponse(BackendlessCollection<FavoriteData> response) {
@@ -213,11 +213,17 @@ public class MyCountries extends Fragment {
         this.context = context;
         Toast.makeText(context, "My Alert", Toast.LENGTH_SHORT).show();
         //my alert
+
+        final SweetAlertDialog checkData = new SweetAlertDialog(context, SweetAlertDialog.PROGRESS_TYPE);
+        checkData.setTitleText("Loading");
+        checkData.setCancelable(false);
+        checkData.show();
         Backendless.Persistence.of(FavoriteData.class).find(new AsyncCallback<BackendlessCollection<FavoriteData>>() {
             @Override
             public void handleResponse(BackendlessCollection<FavoriteData> response) {
                 for (FavoriteData item : response.getData()) {
                     Flink.add(item.FavoriteLink);
+
                       /*  checkData.setCancelable(true);
                         checkData.dismiss();*/
                 }
@@ -227,6 +233,11 @@ public class MyCountries extends Fragment {
             public void handleFault(BackendlessFault fault) {
             }
         });
+checkData.setOnDismissListener(new DialogInterface.OnDismissListener() {
+    @Override
+    public void onDismiss(DialogInterface dialog) {
+
+
         final MaterialDialog mysingleAlert = new MaterialDialog(context);
         //final MaterialDialog mysingleAlert = new MaterialDialog(context);
         // final AlertDialog.Builder mysingleAlert = new AlertDialog.Builder(context);
@@ -360,6 +371,8 @@ public class MyCountries extends Fragment {
         }
         mysingleAlert.setContentView(FavoriteIn);
         mysingleAlert.show();
+    }
+});
     }
 
     public void MyAlertDialog2(final Context context, final String SaveLink, final String SavePic) {
